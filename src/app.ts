@@ -1,15 +1,15 @@
 import express, { Application } from "express";
 import healthRouter from "./routes/health";
+import jwksRouter from "./routes/jwks";
 
 export function createApp(): Application {
   const app = express();
 
-  // Middleware
   app.use(express.json());
-  app.use(express.urlencoded({ extended: true })); // needed for form POST in OAuth flows
+  app.use(express.urlencoded({ extended: true }));
 
-  // Routes
   app.use(healthRouter);
+  app.use(jwksRouter);
 
   return app;
 }
