@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { createAuthCode } from "../store/authCodes";
+import { getClient, isValidRedirectUri } from "../store/clients";
 
 const router = Router();
 
@@ -11,13 +12,24 @@ router.get("/authorize", (req: Request, res: Response) => {
     return;
   }
 
+  const client = getClient(client_id);
+  if (!client) {
+    res.status(401).json({ error: "unknown_client" });
+    return;
+  }
+
+  // Redirect URI must exactly match one of the registered URIs —
+  // even a trailing slash difference is enough to reject
+  if (!isValidRedirectUri(client_id, redirect_uri)) {
+    res.status(400).json({ error: "invalid_redirect_uri" });
+    return;
+  }
+
   if (response_type !== "code") {
     res.status(400).json({ error: "unsupported_response_type" });
     return;
   }
 
-  // In a real server this would show a login page — for now we simulate
-  // an already-authenticated user so we can test the full code exchange flow
   const subject = "user-123";
   const email = "john@example.com";
   const name = "John";
@@ -26,9 +38,6 @@ router.get("/authorize", (req: Request, res: Response) => {
 
   const redirectUrl = new URL(redirect_uri);
   redirectUrl.searchParams.set("code", code);
-
-  // state must be passed back unchanged so the client can verify it
-  // and protect against CSRF attacks
   if (state) redirectUrl.searchParams.set("state", state);
 
   res.redirect(redirectUrl.toString());

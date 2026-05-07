@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { SignJWT, importPKCS8 } from "jose";
 import { getPrivateKey } from "../keys/keyManager";
 import { consumeAuthCode } from "../store/authCodes";
+import { validateClient } from "../store/clients";
 import { config } from "../config/env";
 
 const router = Router();
@@ -19,20 +20,27 @@ async function signToken(payload: Record<string, string>, subject: string): Prom
 }
 
 router.post("/token", async (req: Request, res: Response) => {
-  const { grant_type, code, redirect_uri, client_id } = req.body;
+  const { grant_type, code, redirect_uri, client_id, client_secret } = req.body;
 
   if (grant_type !== "authorization_code") {
     res.status(400).json({ error: "unsupported_grant_type" });
     return;
   }
 
-  if (!code || !redirect_uri || !client_id) {
+  if (!code || !redirect_uri || !client_id || !client_secret) {
     res.status(400).json({ error: "missing required parameters" });
     return;
   }
 
-  const authCode = consumeAuthCode(code);
+  // Client secret is validated here — this is the back-channel handshake
+  // that proves the token request is coming from the legitimate client
+  const client = validateClient(client_id, client_secret);
+  if (!client) {
+    res.status(401).json({ error: "invalid_client" });
+    return;
+  }
 
+  const authCode = consumeAuthCode(code);
   if (!authCode) {
     res.status(400).json({ error: "invalid_or_expired_code" });
     return;
