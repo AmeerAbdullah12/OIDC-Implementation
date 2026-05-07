@@ -21,7 +21,7 @@ router.get("/.well-known/openid-configuration", (_req: Request, res: Response) =
 
     scopes_supported: ["openid", "email", "profile"],
 
-    // Both methods will be implemented in the auth code flow (commit 5 & 6)
+    // Both methods will be implemented in the auth code flow
     token_endpoint_auth_methods_supported: [
       "client_secret_post",
       "client_secret_basic",
