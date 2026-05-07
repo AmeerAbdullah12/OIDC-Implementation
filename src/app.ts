@@ -4,6 +4,7 @@ import jwksRouter from "./routes/jwks";
 import tokenRouter from "./routes/token";
 import discoveryRouter from "./routes/discovery";
 import authorizeRouter from "./routes/authorize";
+import userinfoRouter from "./routes/userinfo";
 
 export function createApp(): Application {
   const app = express();
@@ -16,6 +17,7 @@ export function createApp(): Application {
   app.use(jwksRouter);
   app.use(authorizeRouter);
   app.use(tokenRouter);
-  
+  app.use(userinfoRouter);
+
   return app;
 }
