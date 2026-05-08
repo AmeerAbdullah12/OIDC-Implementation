@@ -1,5 +1,18 @@
-node_modules/
-dist/
-.env
-keys/
+# dependencies
+oidc-server-app/node_modules/
+oidc-client-server/node_modules/
+oidc-client/node_modules/
+
+# builds
+oidc-server-app/dist/
+oidc-client-server/dist/
+oidc-client/dist/
+
+# env files
+oidc-server-app/.env
+oidc-client-server/.env
+oidc-client/.env
+
+# keys
+oidc-server-app/keys/
 *.pem
