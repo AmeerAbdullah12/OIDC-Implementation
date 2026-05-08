@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { SignJWT, importPKCS8 } from "jose";
+import crypto from "crypto";
 import { getPrivateKey } from "../keys/keyManager";
 import { consumeAuthCode } from "../store/authCodes";
 import { validateClient } from "../store/clients";
@@ -19,21 +20,30 @@ async function signToken(payload: Record<string, string>, subject: string): Prom
     .sign(privateKey);
 }
 
+function verifyCodeChallenge(verifier: string, challenge: string): boolean {
+  // S256: hash the verifier with SHA-256 and base64url-encode it,
+  // then compare against the challenge stored at authorize time
+  const hashed = crypto
+    .createHash("sha256")
+    .update(verifier)
+    .digest("base64url");
+
+  return hashed === challenge;
+}
+
 router.post("/token", async (req: Request, res: Response) => {
-  const { grant_type, code, redirect_uri, client_id, client_secret } = req.body;
+  const { grant_type, code, redirect_uri, client_id, client_secret, code_verifier } = req.body;
 
   if (grant_type !== "authorization_code") {
     res.status(400).json({ error: "unsupported_grant_type" });
     return;
   }
 
-  if (!code || !redirect_uri || !client_id || !client_secret) {
+  if (!code || !redirect_uri || !client_id) {
     res.status(400).json({ error: "missing required parameters" });
     return;
   }
 
-  // Client secret is validated here — this is the back-channel handshake
-  // that proves the token request is coming from the legitimate client
   const client = validateClient(client_id, client_secret);
   if (!client) {
     res.status(401).json({ error: "invalid_client" });
@@ -54,6 +64,19 @@ router.post("/token", async (req: Request, res: Response) => {
   if (authCode.redirectUri !== redirect_uri) {
     res.status(400).json({ error: "redirect_uri mismatch" });
     return;
+  }
+
+  // If a challenge was stored at authorize time, the verifier must be present and valid
+  if (authCode.codeChallenge) {
+    if (!code_verifier) {
+      res.status(400).json({ error: "code_verifier required" });
+      return;
+    }
+
+    if (!verifyCodeChallenge(code_verifier, authCode.codeChallenge)) {
+      res.status(400).json({ error: "invalid_code_verifier" });
+      return;
+    }
   }
 
   const token = await signToken(

@@ -8,10 +8,10 @@ interface AuthCode {
   name: string;
   redirectUri: string;
   expiresAt: number;
+  codeChallenge?: string;
+  codeChallengeMethod?: string;
 }
 
-// In production this would be Redis — codes must be shared across instances
-// and must expire automatically
 const store = new Map<string, AuthCode>();
 
 export function createAuthCode(data: Omit<AuthCode, "code" | "expiresAt">): string {
@@ -20,7 +20,6 @@ export function createAuthCode(data: Omit<AuthCode, "code" | "expiresAt">): stri
   store.set(code, {
     ...data,
     code,
-    // Auth codes are intentionally short-lived — 10 minutes is the RFC maximum
     expiresAt: Date.now() + 10 * 60 * 1000,
   });
 
@@ -32,7 +31,6 @@ export function consumeAuthCode(code: string): AuthCode | null {
 
   if (!entry) return null;
 
-  // Codes are single-use — delete immediately after retrieval
   store.delete(code);
 
   if (Date.now() > entry.expiresAt) return null;
