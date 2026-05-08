@@ -5,6 +5,7 @@ import tokenRouter from "./routes/token";
 import discoveryRouter from "./routes/discovery";
 import authorizeRouter from "./routes/authorize";
 import userinfoRouter from "./routes/userinfo";
+import registerRouter from "./routes/register";
 
 export function createApp(): Application {
   const app = express();
@@ -18,6 +19,7 @@ export function createApp(): Application {
   app.use(authorizeRouter);
   app.use(tokenRouter);
   app.use(userinfoRouter);
+  app.use(registerRouter);
 
   return app;
 }
