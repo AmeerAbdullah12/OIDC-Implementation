@@ -15,4 +15,5 @@ export const config = {
   issuerUrl: requireEnv("ISSUER_URL"),
   privateKeyPath: process.env.PRIVATE_KEY_PATH ?? "./keys/private.pem",
   publicKeyPath: process.env.PUBLIC_KEY_PATH ?? "./keys/public.pem",
+  sessionSecret: requireEnv("SESSION_SECRET"),
 } as const;
