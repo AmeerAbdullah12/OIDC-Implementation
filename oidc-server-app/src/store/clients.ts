@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 interface Client {
   clientId: string;
   clientSecret: string;
@@ -5,16 +7,14 @@ interface Client {
   name: string;
 }
 
-// In production this would be a database table
 const clients = new Map<string, Client>([
   [
-    "test-client",
+    "oidc-client",
     {
-      clientId: "test-client",
-      // In production client secrets would be hashed — never stored in plain text
-      clientSecret: "test-secret",
+      clientId: "oidc-client",
+      clientSecret: "oidc-client-secret",
       redirectUris: ["http://localhost:8080/callback"],
-      name: "Test Application",
+      name: "OIDC Client App",
     },
   ],
 ]);
