@@ -1,6 +1,7 @@
 import express, { Application } from "express";
 import session from "express-session";
 import { config } from "./config/env";
+import authRouter from "./routes/auth";
 
 export function createApp(): Application {
   const app = express();
@@ -20,6 +21,8 @@ export function createApp(): Application {
       },
     })
   );
+
+  app.use(authRouter);
 
   return app;
 }
