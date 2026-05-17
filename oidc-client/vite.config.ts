@@ -6,8 +6,6 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/login": "http://localhost:8080",
-      "/callback": "http://localhost:8080",
       "/me": "http://localhost:8080",
       "/logout": "http://localhost:8080",
     },

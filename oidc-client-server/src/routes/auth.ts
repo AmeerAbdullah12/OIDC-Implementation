@@ -12,10 +12,23 @@ router.get("/login", (req: Request, res: Response) => {
     .update(codeVerifier)
     .digest("base64url");
 
-  req.session.codeVerifier = codeVerifier;
-
   const state = crypto.randomBytes(16).toString("hex");
-  req.session.oauthState = state;
+
+  // Store verifier and state in signed HttpOnly cookies so they
+  // survive the redirect chain without relying on session
+  res.cookie("code_verifier", codeVerifier, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: config.nodeEnv === "production",
+    maxAge: 10 * 60 * 1000,
+  });
+
+  res.cookie("oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: config.nodeEnv === "production",
+    maxAge: 10 * 60 * 1000,
+  });
 
   const authUrl = new URL(`${config.oidcIssuer}/authorize`);
   authUrl.searchParams.set("client_id", config.oidcClientId);
@@ -32,21 +45,27 @@ router.get("/login", (req: Request, res: Response) => {
 router.get("/callback", async (req: Request, res: Response) => {
   const { code, state } = req.query as Record<string, string>;
 
-  if (!code) {
-    res.status(400).json({ error: "missing code" });
+  if (!code || !state) {
+    res.status(400).json({ error: "missing code or state" });
     return;
   }
 
-  if (state !== req.session.oauthState) {
+  const storedState = req.cookies.oauth_state;
+  const codeVerifier = req.cookies.code_verifier;
+
+  if (!storedState || state !== storedState) {
     res.status(400).json({ error: "invalid state" });
     return;
   }
 
-  const codeVerifier = req.session.codeVerifier;
   if (!codeVerifier) {
     res.status(400).json({ error: "missing code verifier" });
     return;
   }
+
+  // Clear the temporary cookies
+  res.clearCookie("code_verifier");
+  res.clearCookie("oauth_state");
 
   const params = new URLSearchParams();
   params.set("grant_type", "authorization_code");
@@ -66,10 +85,13 @@ router.get("/callback", async (req: Request, res: Response) => {
 
   req.session.accessToken = access_token;
 
-  delete req.session.codeVerifier;
-  delete req.session.oauthState;
-
-  res.redirect("http://localhost:5173/dashboard");
+  req.session.save((err) => {
+    if (err) {
+      res.status(500).json({ error: "session save failed" });
+      return;
+    }
+    res.redirect("http://localhost:5173/dashboard");
+  });
 });
 
 export default router;
