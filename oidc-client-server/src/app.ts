@@ -2,6 +2,8 @@ import express, { Application } from "express";
 import session from "express-session";
 import { config } from "./config/env";
 import authRouter from "./routes/auth";
+import meRouter from "./routes/me";
+import logoutRouter from "./routes/logout";
 
 export function createApp(): Application {
   const app = express();
@@ -23,6 +25,8 @@ export function createApp(): Application {
   );
 
   app.use(authRouter);
+  app.use(meRouter);
+  app.use(logoutRouter);
 
   return app;
 }
