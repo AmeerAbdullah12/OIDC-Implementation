@@ -1,6 +1,6 @@
 # OIDC Server Implementation
 
-A production-standard OpenID Connect (OIDC) server built from scratch, with a BFF (Backend For Frontend) and a React client. The goal of this project is to understand how authentication systems like Google SSO actually work under the hood — and to build one.
+A from-scratch OpenID Connect (OIDC) implementation built to understand how authentication systems like Google SSO actually work under the hood, including the auth server, a BFF, and a React client. 
 
 ---
 
